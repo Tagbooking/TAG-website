@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Contact Form Handling
+    // Contact Form Handling - Direct Email Solution
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -313,25 +313,134 @@ document.addEventListener('DOMContentLoaded', function() {
                 message: formData.get('message')
             };
             
+            // Validate form data
+            if (!data.name || !data.turfName || !data.phone || !data.message) {
+                showNotification('Please fill in all fields before submitting.', 'error');
+                return;
+            }
+            
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
             submitBtn.disabled = true;
             
-            // Simulate form submission (replace with actual API call)
+            // Prepare email content
+            const subject = `New Turf Inquiry from ${data.name} - ${data.turfName}`;
+            const emailBody = `
+Dear TAG Team,
+
+You have received a new inquiry through your website:
+
+Name: ${data.name}
+Turf Name: ${data.turfName}
+Contact Number: ${data.phone}
+
+Message:
+${data.message}
+
+Please respond to this inquiry at your earliest convenience.
+
+Best regards,
+TAG Website Contact Form
+            `.trim();
+            
+            // Create mailto link
+            const mailtoLink = `mailto:bookwithtagapp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+            
             setTimeout(() => {
+                // Open email client
+                window.open(mailtoLink, '_blank');
+                
                 // Reset form
                 this.reset();
                 
-                // Show success message
-                showNotification('Message sent successfully! We\'ll get back to you soon.', 'success');
+                // Reset form field classes
+                document.querySelectorAll('.form-group').forEach(group => {
+                    group.classList.remove('focused');
+                });
+                
+                // Show success message with instructions
+                showNotification('Email client opened! Please send the email to complete your inquiry.', 'success');
+                
+                // Additional confirmation modal
+                setTimeout(() => {
+                    if (confirm('Email client opened successfully? Click OK if you sent the email, or Cancel to try again.')) {
+                        showNotification('Thank you! Your inquiry has been sent. We\'ll get back to you soon!', 'success');
+                    } else {
+                        // Offer alternative contact methods
+                        showAlternativeContact(data);
+                    }
+                }, 2000);
                 
                 // Reset button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-            }, 2000);
+            }, 1000);
         });
+    }
+
+    // Alternative contact method if email client fails
+    function showAlternativeContact(data) {
+        const modal = document.createElement('div');
+        modal.className = 'alternative-contact-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Alternative Contact Methods</h3>
+                    <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>If your email client didn't open, you can contact us directly:</p>
+                    <div class="contact-options">
+                        <div class="contact-option">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <strong>Email:</strong>
+                                <a href="mailto:bookwithtagapp@gmail.com">bookwithtagapp@gmail.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-option">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <strong>Phone:</strong>
+                                <a href="tel:+91-9685831488">+91-9685831488</a>
+                            </div>
+                        </div>
+                        <div class="contact-option">
+                            <i class="fas fa-whatsapp"></i>
+                            <div>
+                                <strong>WhatsApp:</strong>
+                                <a href="https://wa.me/919685831488?text=Hi, I'm interested in TAG services for ${data.turfName}. My name is ${data.name}." target="_blank">Send WhatsApp Message</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inquiry-summary">
+                        <h4>Your Inquiry Details:</h4>
+                        <p><strong>Name:</strong> ${data.name}</p>
+                        <p><strong>Turf:</strong> ${data.turfName}</p>
+                        <p><strong>Phone:</strong> ${data.phone}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal styles
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+        `;
+        
+        document.body.appendChild(modal);
     }
 
     // Form Field Animation
@@ -387,14 +496,35 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('%cWebsite crafted with ❤️ and modern web technologies', 'color: #666; font-size: 14px;');
 });
 
-// Notification System
+// Enhanced Notification System
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    
+    // Choose appropriate icon and color
+    let icon, backgroundColor;
+    switch(type) {
+        case 'success':
+            icon = 'check-circle';
+            backgroundColor = 'var(--primary-green)';
+            break;
+        case 'error':
+            icon = 'exclamation-triangle';
+            backgroundColor = '#ff4757';
+            break;
+        case 'warning':
+            icon = 'exclamation-circle';
+            backgroundColor = '#ffa726';
+            break;
+        default:
+            icon = 'info-circle';
+            backgroundColor = '#007bff';
+    }
+    
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+        <i class="fas fa-${icon}"></i>
         <span>${message}</span>
-        <button class="close-btn">&times;</button>
+        <button class="close-btn" aria-label="Close notification">&times;</button>
     `;
     
     // Add notification styles
@@ -402,7 +532,7 @@ function showNotification(message, type = 'info') {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${type === 'success' ? 'var(--primary-green)' : '#007bff'};
+        background: ${backgroundColor};
         color: white;
         padding: 15px 20px;
         border-radius: 10px;
@@ -413,6 +543,7 @@ function showNotification(message, type = 'info') {
         gap: 10px;
         animation: slideIn 0.3s ease-out;
         max-width: 400px;
+        font-weight: 500;
     `;
     
     document.body.appendChild(notification);
@@ -420,16 +551,18 @@ function showNotification(message, type = 'info') {
     // Close button functionality
     const closeBtn = notification.querySelector('.close-btn');
     closeBtn.addEventListener('click', () => {
-        notification.remove();
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
     });
     
-    // Auto remove after 5 seconds
+    // Auto remove after appropriate time based on type
+    const autoRemoveTime = type === 'error' ? 8000 : 5000;
     setTimeout(() => {
         if (notification.parentNode) {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
         }
-    }, 5000);
+    }, autoRemoveTime);
 }
 
 // Scroll-triggered Counter Animation
