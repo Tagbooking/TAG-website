@@ -299,7 +299,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Contact Form Handling - Direct Email Solution
+    // Initialize EmailJS
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init('DQ4BkV2TRsC4TgW7t');
+    }
+    
+    // Contact Form Handling - EmailJS Implementation
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -322,10 +327,51 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             submitBtn.disabled = true;
             
-            // Prepare email content
+            // Prepare template parameters according to EmailJS documentation
+            const templateParams = {
+                name: data.name,
+                time: new Date().toLocaleString(),
+                turf_name: data.turfName,
+                phone: data.phone,
+                message: data.message
+            };
+            
+            console.log('Sending email with parameters:', templateParams);
+            
+            // Send email using EmailJS - let the template handle recipient configuration
+            emailjs.send('service_w345osf', 'template_d661g2r', templateParams)
+                .then(function(response) {
+                    console.log('SUCCESS!', response.status, response.text);
+                    
+                    // Reset form
+                    contactForm.reset();
+                    
+                    // Reset form field classes
+                    document.querySelectorAll('.form-group').forEach(group => {
+                        group.classList.remove('focused');
+                    });
+                    
+                    // Show success message
+                    showNotification('Thank you! Your inquiry has been sent successfully. We\'ll get back to you soon!', 'success');
+                    
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    
+                }, function(error) {
+                    console.error('FAILED...', error);
+                    
+                    // Show error message
+                    showNotification('Sorry, there was an error sending your message. Please try again or contact us directly.', 'error');
+                    
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    
+                    // Fallback to mailto as backup
             const subject = `New Turf Inquiry from ${data.name} - ${data.turfName}`;
             const emailBody = `
 Dear TAG Team,
@@ -345,38 +391,14 @@ Best regards,
 TAG Website Contact Form
             `.trim();
             
-            // Create mailto link
             const mailtoLink = `mailto:bookwithtagapp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
             
             setTimeout(() => {
-                // Open email client
+                        if (confirm('Would you like to try sending via your email client instead?')) {
                 window.open(mailtoLink, '_blank');
-                
-                // Reset form
-                this.reset();
-                
-                // Reset form field classes
-                document.querySelectorAll('.form-group').forEach(group => {
-                    group.classList.remove('focused');
+                        }
+                    }, 2000);
                 });
-                
-                // Show success message with instructions
-                showNotification('Email client opened! Please send the email to complete your inquiry.', 'success');
-                
-                // Additional confirmation modal
-                setTimeout(() => {
-                    if (confirm('Email client opened successfully? Click OK if you sent the email, or Cancel to try again.')) {
-                        showNotification('Thank you! Your inquiry has been sent. We\'ll get back to you soon!', 'success');
-                    } else {
-                        // Offer alternative contact methods
-                        showAlternativeContact(data);
-                    }
-                }, 2000);
-                
-                // Reset button
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 1000);
         });
     }
 

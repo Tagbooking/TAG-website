@@ -398,10 +398,10 @@ body {
     transform: translateY(-3px);
 }
 
-    .hero-visual {
-        animation: slideInRight 1s ease-out;
-    }
-    
+.hero-visual {
+    animation: slideInRight 1s ease-out;
+}
+
     @media (max-width: 768px) {
         .hero-visual {
             animation: none;
@@ -417,9 +417,9 @@ body {
     transition: transform 0.5s ease;
 }
 
-    .hero-card:hover {
-        transform: perspective(1000px) rotateY(0deg) scale(1.05);
-    }
+.hero-card:hover {
+    transform: perspective(1000px) rotateY(0deg) scale(1.05);
+}
     
     @media (max-width: 768px) {
         .hero-card:hover {
@@ -2000,4 +2000,4 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
+} 
